@@ -1,0 +1,27 @@
+# See http://www.appveyor.com/docs/appveyor-yml for many more options
+# Skip on updates to the readme.
+# We can force this by adding [skip ci] or [ci skip] anywhere in commit message 
+skip_commits:  
+  message: /updated readme.*/
+install:
+  - cinst pester
+services: mssql2016
+build: false
+test_script:
+# Test with native PS version
+  - ps: Install-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force
+  - ps: Import-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force
+  - ps: Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.6.0 -Repository PSGallery -Force
+  - ps: Install-Module sqlserver -Repository PSGallery -Force
+  - ps: Import-Module sqlserver
+  - ps: Install-Module dbatools -Repository PSGallery -Force
+  - ps: Import-Module dbatools
+  - ps: . .\Tests\appveyor.pester.ps1
+# Finalize pass - collect and upload results
+  - ps: . .\Tests\appveyor.pester.ps1 -Finalize
+# Notify Slack Channel
+
+# Trying to set the build number
+environment: 
+  environment: development
+  version: 0.8.$(appveyor_build_number)
